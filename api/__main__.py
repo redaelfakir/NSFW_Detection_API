@@ -1,38 +1,21 @@
-from api import predict, app
-from api.functions import download_image
-from config import PORT
 import os
-import uvicorn
+import urllib.request
 
-model = predict.load_model('nsfw_detector/nsfw_model.h5')
+# URL of the model file on GitHub
+MODEL_URL = "https://github.com/redaelfakir/nsfw_model/raw/main/nsfw_model.h5"
+MODEL_PATH = "nsfw_model.h5"
 
-
-@app.get("/")
-async def detect_nsfw(url: str):
-    if not url:
-        return {"ERROR": "URL PARAMETER EMPTY"}
-    image = await download_image(url)
-    if not image:
-        return {"ERROR": "IMAGE SIZE TOO LARGE OR INCORRECT URL"}
-    results = predict.classify(model, image)
-    os.remove(image)
-    hentai = results['data']['hentai']
-    sexy = results['data']['sexy']
-    porn = results['data']['porn']
-    drawings = results['data']['drawings']
-    neutral = results['data']['neutral']
-    if neutral >= 25:
-        results['data']['is_nsfw'] = False
-        return results
-    elif (sexy + porn + hentai) >= 70:
-        results['data']['is_nsfw'] = True
-        return results
-    elif drawings >= 40:
-        results['data']['is_nsfw'] = False
-        return results
-    else:
-        results['data']['is_nsfw'] = False
-        return results
+# Function to download the model if it doesn't exist
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print("Downloading model...")
+        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+        print("Model downloaded.")
 
 if __name__ == "__main__":
-    uvicorn.run("api:app", host="0.0.0.0", port=PORT, log_level="info")
+    # Download the model file if not present
+    download_model()
+
+    # Rest of your main code
+    import functions  # or any other necessary imports
+    # Your existing code to start the FastAPI server
